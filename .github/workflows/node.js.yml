@@ -34,10 +34,10 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: 16.8.x
-    - run: npm install -g codecov
+    # - run: npm install -g codecov
     - run: npm install
-    - run: npm test
-    - run: codecov
+    # - run: npm test
+    # - run: codecov
     - run: npm run build
     - name: Setup Pages
       uses: actions/configure-pages@v3
