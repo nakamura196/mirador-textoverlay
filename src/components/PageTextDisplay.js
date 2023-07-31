@@ -16,9 +16,11 @@ const styles = (theme) => ({
 });
 
 /** Check if we're running in Gecko */
+/*
 function runningInGecko() {
   return navigator.userAgent.indexOf('Gecko/') >= 0;
 }
+*/
 
 /** Page Text Display component that is optimized for fast panning/zooming
  *
@@ -170,6 +172,7 @@ class PageTextDisplay extends React.Component {
      *
      * So we have to go against best practices and use user agent sniffing to determine dynamically
      * how to render lines and spans, sorry :-/ */
+    /*
     const isGecko = runningInGecko();
     // eslint-disable-next-line require-jsdoc
     let LineWrapper = ({ children }) => <text style={textStyle}>{children}</text>;
@@ -183,6 +186,7 @@ class PageTextDisplay extends React.Component {
       // eslint-disable-next-line react/jsx-props-no-spreading, require-jsdoc
       SpanElem = (props) => <text style={textStyle} {...props} />;
     }
+    */
     return (
       <div ref={this.containerRef} style={containerStyle}>
         {/**
@@ -213,40 +217,34 @@ class PageTextDisplay extends React.Component {
           </g>
         </svg>
         <svg style={{ ...svgStyle, position: 'absolute' }} className={classes.textOverlay}>
-          <g ref={this.textContainerRef}>
-            {renderLines.map((line) =>
-              line.spans ? (
-                <LineWrapper key={`line-${line.x}-${line.y}`}>
-                  {line.spans
-                    .filter((w) => w.width > 0 && w.height > 0)
-                    .map(({ x, y, width, text }) => (
-                      <SpanElem
-                        key={`text-${x}-${y}`}
-                        x={x}
-                        y={line.y + line.height * 0.75}
-                        textLength={width}
-                        fontSize={`${line.height * 0.75}px`}
-                        lengthAdjust="spacingAndGlyphs"
-                      >
-                        {text}
-                      </SpanElem>
-                    ))}
-                </LineWrapper>
-              ) : (
-                <text
-                  key={`line-${line.x}-${line.y}`}
-                  x={line.x}
-                  y={line.y + line.height * 0.75}
-                  textLength={line.width}
-                  fontSize={`${line.height}px`}
-                  lengthAdjust="spacingAndGlyphs"
-                  style={textStyle}
-                >
-                  {line.text}
-                </text>
-              )
-            )}
-          </g>
+          <>
+            <g ref={this.textContainerRef}>
+              {renderLines.map((line) => {
+                const isVertical = line.width < line.height;
+                const writingMode = isVertical ? 'tb' : '';
+                const textLength = isVertical ? line.height : line.width;
+                const dx = isVertical ? line.width / 2 : 0;
+                const dy = isVertical ? 0 : line.height * 0.75;
+                const fontSize = isVertical ? line.width : line.height;
+                return (
+                  <text
+                    key={`text-${line.x}-${line.y}`}
+                    x={line.x}
+                    y={line.y}
+                    dx={dx}
+                    dy={dy}
+                    writingMode={writingMode}
+                    fontSize={fontSize * 0.75}
+                    textLength={textLength}
+                    lengthAdjust="spacingAndGlyphs"
+                    style={{ ...textStyle }}
+                  >
+                    {line.text}
+                  </text>
+                );
+              })}
+            </g>
+          </>
         </svg>
       </div>
     );
