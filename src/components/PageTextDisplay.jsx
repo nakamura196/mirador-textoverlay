@@ -149,8 +149,28 @@ const PageTextDisplay = forwardRef(
         >
           <style ref={styleRef}>{getStyleText(theme, selectable)}</style>
           <g ref={textContainerRef}>
-            {renderLines.map((line) =>
-              line.spans ? (
+            {renderLines.map((line) => {
+              // Vertical lines (taller than wide) — e.g. vertical Japanese OCR
+              // (ALTO). Render the line as a single `<text>` with a vertical
+              // writing mode instead of the horizontal line/span layout.
+              if (line.width < line.height) {
+                return (
+                  <text
+                    key={`line-${line.x}-${line.y}`}
+                    dx={line.width / 2}
+                    fontSize={`${line.width * 0.75}px`}
+                    lengthAdjust="spacingAndGlyphs"
+                    style={textStyle}
+                    textLength={line.height}
+                    writingMode="tb"
+                    x={line.x}
+                    y={line.y}
+                  >
+                    {line.text}
+                  </text>
+                );
+              }
+              return line.spans ? (
                 <LineWrapper key={`line-${line.x}-${line.y}`}>
                   {line.spans
                     .filter((word) => word.width > 0 && word.height > 0)
@@ -179,8 +199,8 @@ const PageTextDisplay = forwardRef(
                 >
                   {line.text}
                 </text>
-              ),
-            )}
+              );
+            })}
           </g>
         </svg>
       </div>
