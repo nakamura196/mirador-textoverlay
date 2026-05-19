@@ -26,6 +26,10 @@ const config = {
       manifestId: 'https://api.digitale-sammlungen.de/iiif/presentation/v2/bsb00135902/manifest',
       provider: 'Bavarian State Library',
     },
+    {
+      manifestId: 'https://nakamura196.github.io/mirador-integration-textoverlay/manifest.json',
+      provider: 'National Diet Library — Tale of Genji (vertical, ALTO)',
+    },
   ],
   id: 'demo',
   window: {
@@ -38,8 +42,7 @@ const config = {
   },
   windows: [
     {
-      canvasIndex: 8,
-      manifestId: 'https://wellcomelibrary.org/iiif/b18035723/manifest',
+      manifestId: 'https://nakamura196.github.io/mirador-integration-textoverlay/manifest.json',
       view: 'single',
     },
   ],
