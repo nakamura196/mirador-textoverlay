@@ -30,6 +30,7 @@
     "check": "npm run lint && npm run test && npm run build",
     "format": "eslint . --ext js,jsx --fix --max-warnings 0 --report-unused-disable-directives",
     "lint": "eslint . --ext js,jsx --max-warnings 0 --report-unused-disable-directives",
+    "prepare": "npm run build:plugin",
     "prepublishOnly": "npm run check",
     "prepreview": "npm run build:demo",
     "preview": "BUILD_MODE=demo vite preview",
