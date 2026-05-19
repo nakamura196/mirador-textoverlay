@@ -351,24 +351,37 @@ export function parseIiifAnnotations(annos, imgSize) {
       anno.dcType === 'Line', // Europeana
   );
   const targetAnnos = lineAnnos.length > 0 ? lineAnnos : annos;
-  const boxes = targetAnnos.map((anno) => {
-    let text;
-    if (anno.resource) {
-      text = anno.resource.chars ?? anno.resource.value;
-    } else {
-      text = anno.body.value;
-    }
-    let target = anno.target || anno.on;
-    target = Array.isArray(target) ? target[0] : target;
-    const [x, y, width, height] = target.matchAll(fragmentPat).next().value.slice(1, 5);
-    return {
-      height: parseInt(height, 10),
-      text,
-      width: parseInt(width, 10),
-      x: parseInt(x, 10),
-      y: parseInt(y, 10),
-    };
-  });
+  const boxes = targetAnnos
+    .map((anno) => {
+      let text;
+      if (anno.resource) {
+        text = anno.resource.chars ?? anno.resource.value;
+      } else {
+        text = anno.body?.value;
+      }
+      let target = anno.target || anno.on;
+      target = Array.isArray(target) ? target[0] : target;
+      // We only support `#xywh=` media fragment targets. Annotations with a
+      // non-string target (e.g. an SVG selector object) or a target without
+      // an `#xywh=` fragment are skipped instead of throwing, which would
+      // otherwise abort text discovery for the entire canvas.
+      if (typeof target !== 'string') {
+        return null;
+      }
+      const match = target.matchAll(fragmentPat).next().value;
+      if (!match) {
+        return null;
+      }
+      const [x, y, width, height] = match.slice(1, 5);
+      return {
+        height: parseInt(height, 10),
+        text,
+        width: parseInt(width, 10),
+        x: parseInt(x, 10),
+        y: parseInt(y, 10),
+      };
+    })
+    .filter((box) => box !== null);
 
   return {
     ...(imgSize ?? getFallbackImageSize(boxes)),

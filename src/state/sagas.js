@@ -152,18 +152,26 @@ export function* fetchExternalAnnotationResources({ targetId, annotationId, anno
 
 /** Saga for processing texts from IIIF annotations */
 export function* processTextsFromAnnotations({ targetId, annotationId, annotationJson }) {
-  // Check if the annotation contains "content as text" resources that
-  // we can extract text with coordinates from
-  const contentAsTextAnnos = annotationJson.resources.filter(
-    (anno) =>
-      anno.motivation === 'supplementing' || // IIIF 3.0
-      anno.resource['@type']?.toLowerCase() === 'cnt:contentastext' || // IIIF 2.0
-      ['Line', 'Word'].indexOf(anno.dcType) >= 0, // Europeana IIIF 2.0
-  );
+  // An unhandled error in this `takeEvery` worker would propagate to the root
+  // saga and tear down *all* of the plugin's sagas, including external OCR
+  // (ALTO/hOCR) discovery and fetching. Keep failures contained so a single
+  // malformed annotation list cannot disable text overlays for the whole window.
+  try {
+    // Check if the annotation contains "content as text" resources that
+    // we can extract text with coordinates from
+    const contentAsTextAnnos = annotationJson.resources.filter(
+      (anno) =>
+        anno.motivation === 'supplementing' || // IIIF 3.0
+        anno.resource['@type']?.toLowerCase() === 'cnt:contentastext' || // IIIF 2.0
+        ['Line', 'Word'].indexOf(anno.dcType) >= 0, // Europeana IIIF 2.0
+    );
 
-  if (contentAsTextAnnos.length > 0) {
-    const parsed = yield call(parseIiifAnnotations, contentAsTextAnnos);
-    yield put(receiveText(targetId, annotationId, 'annos', parsed));
+    if (contentAsTextAnnos.length > 0) {
+      const parsed = yield call(parseIiifAnnotations, contentAsTextAnnos);
+      yield put(receiveText(targetId, annotationId, 'annos', parsed));
+    }
+  } catch (error) {
+    console.warn(`Could not process texts from annotation ${annotationId}, skipping.`, error);
   }
 }
 

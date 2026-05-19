@@ -13,6 +13,7 @@ import {
 import { Canvas } from 'manifesto.js';
 
 import {
+  PluginActionTypes,
   discoveredText,
   requestText,
   receiveText,
@@ -282,6 +283,20 @@ describe('Processing text from regular annotations', () => {
     })
       .provide([[call(parseIiifAnnotations, annos.slice(0, 4)), mockParse]])
       .put(receiveText('canvasA', 'annoList', 'annos', mockParse))
+      .run();
+  });
+
+  it('should contain parsing errors so they cannot tear down the other sagas', () => {
+    const annos = [{ resource: { '@type': 'cnt:contentAsText' } }];
+    // A throwing `parseIiifAnnotations` must not escape this `takeEvery` worker:
+    // an uncaught error would propagate to the root saga and kill external OCR.
+    return expectSaga(processTextsFromAnnotations, {
+      annotationId: 'annoList',
+      annotationJson: { resources: annos },
+      targetId: 'canvasA',
+    })
+      .provide([[call(parseIiifAnnotations, annos), throwError(new Error('unsupported selector'))]])
+      .not.put.actionType(PluginActionTypes.RECEIVE_TEXT)
       .run();
   });
 });

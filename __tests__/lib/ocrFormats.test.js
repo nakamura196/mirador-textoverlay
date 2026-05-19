@@ -145,4 +145,56 @@ describe('parsing text from IIIF annotations', () => {
     expect(parsed.width).toEqual(2261);
     expect(parsed.height).toEqual(3309);
   });
+
+  it('should skip annotations with an unsupported (non-#xywh) target instead of throwing', () => {
+    // IIIF 2.0 annotations targeting the canvas via an SVG selector (an object,
+    // not a `#xywh=` media fragment string).
+    const svgSelectorAnnos = [
+      {
+        '@type': 'oa:Annotation',
+        resource: { '@type': 'cnt:ContentAsText', chars: '八' },
+        on: [
+          {
+            '@type': 'oa:SpecificResource',
+            full: 'https://example.org/canvas/p1',
+            selector: {
+              '@type': 'oa:Choice',
+              item: { '@type': 'oa:SvgSelector', value: '<svg><path d="M 0 0" /></svg>' },
+            },
+          },
+        ],
+      },
+    ];
+    let parsed;
+    expect(() => {
+      parsed = parseIiifAnnotations(svgSelectorAnnos, { width: 100, height: 100 });
+    }).not.toThrow();
+    expect(parsed.lines).toHaveLength(0);
+  });
+
+  it('should keep parseable annotations and drop unparseable ones from the same list', () => {
+    const mixedAnnos = [
+      {
+        resource: { chars: 'good' },
+        on: 'https://example.org/canvas/p1#xywh=10,20,30,40',
+      },
+      {
+        resource: { chars: 'svg-selector' },
+        on: [{ '@type': 'oa:SpecificResource', selector: { '@type': 'oa:SvgSelector' } }],
+      },
+      {
+        resource: { chars: 'no-fragment' },
+        on: 'https://example.org/canvas/p1',
+      },
+    ];
+    const parsed = parseIiifAnnotations(mixedAnnos, { width: 100, height: 100 });
+    expect(parsed.lines).toHaveLength(1);
+    expect(parsed.lines[0]).toMatchObject({
+      text: 'good',
+      x: 10,
+      y: 20,
+      width: 30,
+      height: 40,
+    });
+  });
 });
